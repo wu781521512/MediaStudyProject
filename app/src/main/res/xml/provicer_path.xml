@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <paths>
+        <!--
+        我的文件放在内部缓存目录，所以用的cache-path
+        path  代表该路径下的子文件夹，如果apk不是直接在缓存目录，
+        而是在缓存目录下一级的目录中就要写明，否则可以为空-->
+        <!--
+        external-path 为外部存储路径
+        files-path 为内部存储路径
+        name的值就像是一个常量，代表这path填写的路径，可以在请求数据Uri拼接使用，比如cotent://xxxx/download
+        就等于content://xxxx/(path里的内容)
+        -->
+        <external-path path="." name="DCIM"/>
+        <external-path path="." name="download"/>
+
+    </paths>
+</resources>
