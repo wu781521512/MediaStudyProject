@@ -23,21 +23,12 @@
         app:layout_constraintTop_toBottomOf="@id/btn_record" />
 
     <Button
-        android:id="@+id/btn_write"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="startWrite"
-        android:text="开始写入文件"
-        app:layout_constraintTop_toBottomOf="@id/btn_stop_record" />
-
-
-    <Button
         android:id="@+id/play_music"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="startPlay"
         android:text="播放"
-        app:layout_constraintTop_toBottomOf="@id/btn_write" />
+        app:layout_constraintTop_toBottomOf="@id/btn_stop_record" />
 
     <Button
         android:id="@+id/delete_music"
@@ -46,11 +37,4 @@
         android:onClick="startDelete"
         android:text="删除源文件"
         app:layout_constraintTop_toBottomOf="@id/play_music" />
-    <Button
-        android:id="@+id/delete_log"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="deleteLog"
-        android:text="删除log文件"
-        app:layout_constraintTop_toBottomOf="@id/delete_music" />
 </androidx.constraintlayout.widget.ConstraintLayout>

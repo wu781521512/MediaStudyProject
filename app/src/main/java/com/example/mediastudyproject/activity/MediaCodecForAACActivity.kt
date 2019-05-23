@@ -24,21 +24,14 @@ class MediaCodecForAACActivity : AppCompatActivity() {
 
     private lateinit var audioRecorder: AudioRecord
     private var minBufferSize: Int = 0
-    private lateinit var outputPath: String
     private var isRecording = false
     private lateinit var outputStream: FileOutputStream
-    private lateinit var logOutputStream: FileWriter
-    private lateinit var encodeFormat: MediaFormat
     private lateinit var mediaEncode: MediaCodec
     private lateinit var file: File
-    private lateinit var logFile: File
     private var audioList: LinkedBlockingDeque<ByteArray>? = LinkedBlockingDeque()
     private lateinit var bufferedOutputStream: BufferedOutputStream
-    private lateinit var logBufferedOutputStream: BufferedWriter
-    private val maxByteArray = ByteArray(1024 * 1024 * 5)
-    private var offset: Int = 0
-    var isEndTip = false
-
+    private var isEndTip = false
+    private var mediaPlayer: MediaPlayer? = null
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,12 +39,6 @@ class MediaCodecForAACActivity : AppCompatActivity() {
         setContentView(com.example.mediastudyproject.R.layout.activity_media_codec_for_aac)
         file = File(filesDir, "record.aac")
 
-
-        if (!logFile.exists()) {
-            val createSuccess = logFile.createNewFile()
-        }
-        logOutputStream = FileWriter(logFile, true)
-        logBufferedOutputStream = BufferedWriter(logOutputStream, 1024)
 
         if (!file.exists())
             file.createNewFile()
@@ -85,7 +72,7 @@ class MediaCodecForAACActivity : AppCompatActivity() {
     }
 
     /**
-     * 开始录制声音
+     * 开始录制声音  startRecord为xml中button的onclick方法
      */
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     @NeedsPermission(android.Manifest.permission.RECORD_AUDIO)
@@ -98,9 +85,7 @@ class MediaCodecForAACActivity : AppCompatActivity() {
                     audioRecorder.startRecording()
                     val outputArray = ByteArray(minBufferSize)
                     while (isRecording) {
-                        logBufferedOutputStream.write("读取音频数据\n")
                         var readCode = audioRecorder.read(outputArray, 0, minBufferSize)
-                        logBufferedOutputStream.write("读取音频数据个数 $readCode \n")
                         if (readCode > 0) {
                             val realArray = ByteArray(readCode)
                             System.arraycopy(outputArray, 0, realArray, 0, readCode)
@@ -121,6 +106,7 @@ class MediaCodecForAACActivity : AppCompatActivity() {
         }
 
         thread {
+            //代码中引入了三方动态权限库，原方法被包装成这样  原方法是mediaCodecEncodeToAAC
             mediaCodecEncodeToAACWithPermissionCheck()
         }
     }
@@ -216,16 +202,8 @@ class MediaCodecForAACActivity : AppCompatActivity() {
 
                     outputBuffer.position(info.offset)
 
-
-                    logBufferedOutputStream.write("output 数据大小 ${info.size} \n")
-                    System.arraycopy(outData, 0, maxByteArray, offset, outData.size)
-                    offset += outData.size
-                    logBufferedOutputStream.write("offset $offset \n")
-
                     bufferedOutputStream.write(outData)
                     bufferedOutputStream.flush()
-////                    outputStream.flush()
-//                    bufferedOutputStream.flush()
                     outputBuffer.clear()
                     codec.releaseOutputBuffer(index, false)
                 }
@@ -235,13 +213,11 @@ class MediaCodecForAACActivity : AppCompatActivity() {
                     val inputBuffer = codec.getInputBuffer(index)
 
                     val pop = audioList?.poll()
-                    logBufferedOutputStream.write("Input 获取pop $pop \n")
                     if (pop != null && pop.size >= 2 && (pop[0] == (-777).toByte() && pop[1] == (-888).toByte())) {
                         //结束标志
                         isEndTip = true
                     }
                     if (pop != null && !isEndTip) {
-                        logBufferedOutputStream.write("Input 正常pop写入个数 ${pop.size} \n")
                         inputBuffer?.clear()
                         inputBuffer?.limit(pop.size)
                         inputBuffer?.put(pop, 0, pop.size)
@@ -267,7 +243,6 @@ class MediaCodecForAACActivity : AppCompatActivity() {
                     }
 
                     if (isEndTip) {
-                        logBufferedOutputStream.write("Input 遇到结尾数据 \n")
                         codec.queueInputBuffer(
                             index,
                             0,
@@ -290,27 +265,6 @@ class MediaCodecForAACActivity : AppCompatActivity() {
 
     }
 
-
-    fun startWrite(v: View) {
-//        try {
-//            bufferedOutputStream.write(maxByteArray, 0, offset)
-//            bufferedOutputStream.flush()
-//        } catch (e: IOException) {
-//            val message = e.message
-//            val small = message
-//        } finally {
-            bufferedOutputStream.close()
-            outputStream.close()
-//        }
-        if (file.exists()) {
-            Toast.makeText(this, "写完了 文件大小 ${file.length()}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    private var mediaPlayer: MediaPlayer? = null
-
-
     fun startPlay(v: View) {
         mediaPlayer = MediaPlayer()
         mediaPlayer!!.apply {
@@ -324,15 +278,9 @@ class MediaCodecForAACActivity : AppCompatActivity() {
         }
     }
 
-    fun deleteLog(v: View) {
-        if (logFile.exists()) {
-            val success = logFile.delete()
-            Toast.makeText(this, "删除Log文件 $success", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     /**
-     * 检测设备是否支持目标压缩格式
+     * 检测设备是否支持目标编码格式
      */
     private fun isSupprotAAC(): Boolean {
         val mediaCount = MediaCodecList.getCodecCount()
@@ -373,9 +321,7 @@ class MediaCodecForAACActivity : AppCompatActivity() {
             mediaPlayer = null
         }
         isRecording = false
-        if (logOutputStream != null) {
-            logOutputStream.close()
-        }
+
     }
 
 
