@@ -102,7 +102,8 @@ class AudioAndVideoProcessActivity : AppCompatActivity() {
 //            val audioFile = File(songList[position + 1].path)
 //            val audioFileInputStream = FileInputStream(audioFile)
             //设置要提取音频的文件
-            mAudioMediaExtractor.setDataSource("/storage/emulated/0/RecordVideo/疾风传OP+12-ブルーバード.mp3")
+            mAudioMediaExtractor.setDataSource(songList[position+1].path)
+//            mAudioMediaExtractor.setDataSource("/storage/emulated/0/RecordVideo/疾风传OP+12-ブルーバード.mp3")
 
             //获取轨道，找到视频和音频轨道
             for (i in 0 until mVideoMediaExtractor.trackCount) {
@@ -122,11 +123,11 @@ class AudioAndVideoProcessActivity : AppCompatActivity() {
             for (j in 0 until mAudioMediaExtractor.trackCount) {
                 val mediaFormat = mAudioMediaExtractor.getTrackFormat(j)
                 if (mediaFormat.getString(MediaFormat.KEY_MIME).startsWith("audio/")) {
-                    //获取音轨
+//                    //获取音轨
                     mAudioMediaExtractor.selectTrack(j)
-                    //添加音轨到Muxer
+//                    //添加音轨到Muxer
                     audioMuxerTrackIndex = mMediaMuxer.addTrack(mediaFormat)
-                    //获取音频最大输入
+//                    //获取音频最大输入
                     maxAudioSize = mediaFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE)
                 }
             }

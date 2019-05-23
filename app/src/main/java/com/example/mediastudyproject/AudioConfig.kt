@@ -3,7 +3,7 @@ package com.example.mediastudyproject
 import android.media.AudioFormat
 
 object AudioConfig {
-    const val SAMPLE_RATE = 441000  //采样率
+    const val SAMPLE_RATE = 44100  //采样率
     /**
      * CHANNEL_IN_MONO 单声道   能够保证所有设备都支持
      * CHANNEL_IN_STEREO 立体声

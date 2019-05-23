@@ -29,13 +29,10 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.AudioAndVideoProcessActivity">
+
         </activity>
         <activity android:name=".activity.Camera2Activity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
         <activity android:name=".activity.CameraActivity">
         </activity>
