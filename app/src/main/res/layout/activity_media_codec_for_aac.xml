@@ -37,4 +37,12 @@
         android:onClick="startDelete"
         android:text="删除源文件"
         app:layout_constraintTop_toBottomOf="@id/play_music" />
+
+    <Button
+        android:id="@+id/btn_toPlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="jump2Decode"
+        android:text="跳转到解码播放"
+        app:layout_constraintTop_toBottomOf="@id/delete_music" />
 </androidx.constraintlayout.widget.ConstraintLayout>

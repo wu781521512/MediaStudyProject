@@ -1,5 +1,6 @@
 package com.example.mediastudyproject.activity
 
+import android.content.Intent
 import android.media.*
 import android.net.Uri
 import android.os.Build
@@ -51,6 +52,10 @@ class MediaCodecForAACActivity : AppCompatActivity() {
         initAudioRecorder()
     }
 
+
+    fun jump2Decode(v: View) {
+        startActivity(Intent(this,MediaCodecDecodeAACActivity::class.java))
+    }
     /**
      * 初始化音频采集
      */
@@ -196,7 +201,7 @@ class MediaCodecForAACActivity : AppCompatActivity() {
 
                     val outData = ByteArray(outPacketSize)
 
-                    addADTStoPacket(AudioConfig.SAMPLE_RATE, outData, outPacketSize)
+                    addADTStoPacket(0x04, outData, outPacketSize)
 
                     outputBuffer.get(outData, 7, outBitsSize)
 

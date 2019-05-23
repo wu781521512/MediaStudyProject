@@ -21,6 +21,9 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".activity.MediaCodecDecodeAACActivity">
+
+        </activity>
         <activity android:name=".activity.MediaCodecForAACActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -29,10 +32,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".activity.AudioAndVideoProcessActivity">
-
         </activity>
         <activity android:name=".activity.Camera2Activity">
-
         </activity>
         <activity android:name=".activity.CameraActivity">
         </activity>
