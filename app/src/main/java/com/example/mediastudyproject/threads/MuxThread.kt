@@ -5,6 +5,7 @@ import android.media.MediaCodec
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.util.Log
+import android.widget.Toast
 import com.example.mediastudyproject.activity.Camera1PreviewActivity.Companion.audioAddTrack
 import com.example.mediastudyproject.activity.Camera1PreviewActivity.Companion.isRecording
 import com.example.mediastudyproject.activity.Camera1PreviewActivity.Companion.videoAddTrack
@@ -82,5 +83,7 @@ class MuxThread(val context: Context) : Thread() {
         mediaMuxer.stop()
         mediaMuxer.release()
         Log.i("camera1", "合成器释放")
+        Log.i("camera1", "未写入音频 ${audioData.size}")
+        Log.i("camera1", "未写入视频 ${videoData.size}")
     }
 }

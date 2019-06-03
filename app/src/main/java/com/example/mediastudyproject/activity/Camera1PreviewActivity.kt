@@ -42,7 +42,9 @@ class Camera1PreviewActivity : AppCompatActivity() {
     private var appropriatePreviewSizes: Camera.Size? = null
     private var audioRecorder: AudioRecord? = null
     private lateinit var mediaMuxer: MediaMuxer
-
+    //AAC数据流  1024为一帧大小  读取时候按照一帧读取，添加时间戳
+    val SAMPLES_PER_FRAME = 1024
+    val FRAMES_PER_BUFFER = 30
 
     private val minSize = AudioRecord.getMinBufferSize(
         AudioConfig.SAMPLE_RATE, AudioConfig.CHANNEL_CONFIG,
@@ -65,7 +67,8 @@ class Camera1PreviewActivity : AppCompatActivity() {
         var videoAddTrack = -1
         @Volatile
         var isRecording = false
-        const val TIME_OUT_US = 1000000L
+        //等待时间会影响音视频播放效果     设置过大 出现音频没声音和跳帧严重问题
+        const val TIME_OUT_US = 10000L
         @Volatile
         private var audioExit = false
         @Volatile
@@ -89,10 +92,10 @@ class Camera1PreviewActivity : AppCompatActivity() {
         audioMediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000)
 
 
-        audioMediaFormat.setInteger(
-            MediaFormat.KEY_AAC_PROFILE,
-            MediaCodecInfo.CodecProfileLevel.AACObjectLC
-        )
+//        audioMediaFormat.setInteger(
+//            MediaFormat.KEY_AAC_PROFILE,
+//            MediaCodecInfo.CodecProfileLevel.AACObjectLC
+//        )
         //配置最大输入大小
         audioMediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, minSize * 2)
 
@@ -134,30 +137,33 @@ class Camera1PreviewActivity : AppCompatActivity() {
         audioCodec!!.configure(audioMediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
         audioCodec!!.start()
 
-
+//        var buffer_size = SAMPLES_PER_FRAME * FRAMES_PER_BUFFER
+//        if (buffer_size < minSize)
+//            buffer_size = (minSize / SAMPLES_PER_FRAME + 1) * SAMPLES_PER_FRAME * 2
         audioRecorder = AudioRecord(
-            MediaRecorder.AudioSource.CAMCORDER, AudioConfig.SAMPLE_RATE,
+            MediaRecorder.AudioSource.MIC, AudioConfig.SAMPLE_RATE,
             AudioConfig.CHANNEL_CONFIG, AudioConfig.AUDIO_FORMAT, minSize
         )
+
 
         if (audioRecorder!!.state == AudioRecord.STATE_INITIALIZED) {
 
             audioRecorder?.run {
                 startRecording()
 
-                val byteArray = ByteArray(minSize)
-                var read = read(byteArray, 0, minSize)
-                while (read > 0 && !audioExit) {
+                val byteArray = ByteArray(SAMPLES_PER_FRAME)
+                var read = read(byteArray, 0, SAMPLES_PER_FRAME)
+                while (read > 0 && isRecording) {
                     Log.i("camera1", "读取到的音频 $read")
 
-                    encodeAudio(byteArray, read, Date().time * 1000)
-                    read = read(byteArray, 0, minSize)
+                    encodeAudio(byteArray, read, getPTSUs())
+                    read = read(byteArray, 0, SAMPLES_PER_FRAME)
 
                 }
 
                 audioRecorder!!.release()
                 //发送EOS编码结束信息
-                encodeAudio(ByteArray(0), 0, Date().time * 1000)
+                encodeAudio(ByteArray(0), 0, getPTSUs())
                 Log.i("camera1", "音频释放")
                 audioCodec!!.release()
             }
@@ -165,6 +171,13 @@ class Camera1PreviewActivity : AppCompatActivity() {
     }
 
     inner class AudioThread : Thread() {
+        private val audioData = LinkedBlockingQueue<ByteArray>()
+
+
+        fun addVideoData(byteArray: ByteArray) {
+            audioData.offer(byteArray)
+        }
+
         override fun run() {
             super.run()
             prepareAudioRecord()
@@ -218,7 +231,11 @@ class Camera1PreviewActivity : AppCompatActivity() {
                     bufferInfo.size = 0
                 }
                 if (bufferInfo.size != 0) {
+                    Log.i("camera1","音频时间戳  ${bufferInfo.presentationTimeUs /1000}")
+//                    bufferInfo.presentationTimeUs = getPTSUs()
                     muxerThread?.addAudioData(outputBuffer, bufferInfo)
+//                    prevOutputPTSUs = bufferInfo.presentationTimeUs
+
                 }
 
                 audioCodec!!.releaseOutputBuffer(dequeueIndex, false)
@@ -235,14 +252,12 @@ class Camera1PreviewActivity : AppCompatActivity() {
     private fun encodeVideo(data: ByteArray, isFinish: Boolean) {
         val videoArray = ByteArray(data.size)
         if (!isFinish) {
-            var i = appropriatePreviewSizes!!.width * appropriatePreviewSizes!!.height * 3 / 2
-
-            System.arraycopy(data, 0, videoArray, 0, i)
-            while (i < data.size) {
-                videoArray[i] = data[i + 1]
-                videoArray[i + 1] = data[i]
-                i += 2
-            }
+            NV21toI420SemiPlanar(
+                data,
+                videoArray,
+                appropriatePreviewSizes!!.width,
+                appropriatePreviewSizes!!.height
+            )
         }
         val videoInputBuffers = videoCodec!!.inputBuffers
         var videoOutputBuffers = videoCodec!!.outputBuffers
@@ -253,13 +268,13 @@ class Camera1PreviewActivity : AppCompatActivity() {
             byteBuffer.clear()
             byteBuffer.put(videoArray)
             if (!isFinish) {
-                videoCodec!!.queueInputBuffer(index, 0, videoArray.size, Date().time * 1000, 0)
+                videoCodec!!.queueInputBuffer(index, 0, videoArray.size, System.nanoTime()/1000, 0)
             } else {
                 videoCodec!!.queueInputBuffer(
                     index,
                     0,
                     0,
-                    0,
+                    System.nanoTime()/1000,
                     MediaCodec.BUFFER_FLAG_END_OF_STREAM
                 )
 
@@ -283,9 +298,7 @@ class Camera1PreviewActivity : AppCompatActivity() {
                     bufferInfo.size = 0
                 }
                 if (bufferInfo.size != 0) {
-                    bufferInfo.presentationTimeUs = getPTSUs()
                     muxerThread?.addVideoData(outputBuffer, bufferInfo)
-                    prevOutputPTSUs = bufferInfo.presentationTimeUs
                 }
                 Log.i(
                     "camera1",
@@ -301,7 +314,23 @@ class Camera1PreviewActivity : AppCompatActivity() {
         }
     }
 
+    private fun NV21toI420SemiPlanar(
+        nv21bytes: ByteArray,
+        i420bytes: ByteArray,
+        width: Int,
+        height: Int
+    ) {
+        System.arraycopy(nv21bytes, 0, i420bytes, 0, width * height)
+        var i = width * height
+        while (i < nv21bytes.size) {
+            i420bytes[i] = nv21bytes[i + 1]
+            i420bytes[i + 1] = nv21bytes[i]
+            i += 2
+        }
+    }
+
     private fun getPTSUs(): Long {
+
         var result = System.nanoTime() / 1000L
         // presentationTimeUs should be monotonic
         // otherwise muxer fail to write
@@ -309,6 +338,7 @@ class Camera1PreviewActivity : AppCompatActivity() {
             result = prevOutputPTSUs - result + result
         return result
     }
+
     private fun initView() {
         surfaceView = findViewById(com.example.mediastudyproject.R.id.surface_view)
         surfaceView.holder.addCallback(object : SurfaceHolder.Callback2 {
@@ -427,7 +457,6 @@ class Camera1PreviewActivity : AppCompatActivity() {
     var videoThread = VideoEncodeThread()
     val audioThread = AudioThread()
     fun startRecorder(v: View) {
-//        prepareVideoRecorder()
 
         isRecording = true
         audioThread.start()
@@ -439,12 +468,16 @@ class Camera1PreviewActivity : AppCompatActivity() {
 
     fun stopRecorder(v: View) {
 //        releaseMediaRecorder()
-        audioExit = true
-        audioThread.join()
-        videoExit = true
-        videoThread.join()
-        MuxThread.muxExit = true
-        muxerThread?.join()
+
+        isRecording = false
+        thread {
+            audioExit = true
+            audioThread.join()
+            videoExit = true
+            videoThread.join()
+            MuxThread.muxExit = true
+            muxerThread?.join()
+        }
     }
 
     private fun releaseMediaRecorder() {
@@ -502,7 +535,6 @@ class Camera1PreviewActivity : AppCompatActivity() {
                         Log.i("camera1", "视频线程是否为   $videoThread")
                         videoThread.addVideoData(data)
                     }
-
                 }
 
             }
@@ -592,11 +624,11 @@ class Camera1PreviewActivity : AppCompatActivity() {
                     encodeVideo(poll, false)
                 }
             }
-            Log.i("camera1", "视频释放")
 
             //发送编码结束标志
             encodeVideo(ByteArray(0), true)
             videoCodec!!.release()
+            Log.i("camera1", "视频释放")
         }
     }
 }
