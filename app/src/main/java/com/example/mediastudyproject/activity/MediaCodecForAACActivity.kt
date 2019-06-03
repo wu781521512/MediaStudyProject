@@ -1,6 +1,7 @@
 package com.example.mediastudyproject.activity
 
 import android.content.Intent
+import android.graphics.ImageFormat
 import android.media.*
 import android.net.Uri
 import android.os.Build
@@ -54,8 +55,9 @@ class MediaCodecForAACActivity : AppCompatActivity() {
 
 
     fun jump2Decode(v: View) {
-        startActivity(Intent(this,MediaCodecDecodeAACActivity::class.java))
+        startActivity(Intent(this, MediaCodecDecodeAACActivity::class.java))
     }
+
     /**
      * 初始化音频采集
      */
@@ -151,11 +153,18 @@ class MediaCodecForAACActivity : AppCompatActivity() {
             val isSupprot = isSupprotAAC()
             //创建音频MediaFormat
             val encodeFormat =
-                MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, AudioConfig.SAMPLE_RATE, 1)
+                MediaFormat.createAudioFormat(
+                    MediaFormat.MIMETYPE_AUDIO_AAC,
+                    AudioConfig.SAMPLE_RATE,
+                    1
+                )
             //配置比特率
             encodeFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000)
             //这是什么？
-            encodeFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+            encodeFormat.setInteger(
+                MediaFormat.KEY_AAC_PROFILE,
+                MediaCodecInfo.CodecProfileLevel.AACObjectLC
+            )
             //配置最大输入大小
             encodeFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, minBufferSize * 2)
 
@@ -239,11 +248,11 @@ class MediaCodecForAACActivity : AppCompatActivity() {
                     if (pop == null && !isEndTip) {
 
                         codec.queueInputBuffer(
-                                index,
-                                0,
-                                0,
-                                Date().time * 1000 - currentTime,
-                                0
+                            index,
+                            0,
+                            0,
+                            Date().time * 1000 - currentTime,
+                            0
                         )
                     }
 
@@ -287,20 +296,22 @@ class MediaCodecForAACActivity : AppCompatActivity() {
     /**
      * 检测设备是否支持目标编码格式
      */
-    private fun isSupprotAAC(): Boolean {
-        val mediaCount = MediaCodecList.getCodecCount()
-        for (i in 0 until mediaCount) {
-            val codecInfoAt = MediaCodecList.getCodecInfoAt(i)
-            if (!codecInfoAt.isEncoder)
-                continue
-            val supportedTypes = codecInfoAt.supportedTypes
-            for (j in 0 until supportedTypes.size) {
-                if (supportedTypes[j].equals(MediaFormat.MIMETYPE_AUDIO_AAC, true)) {
-                    return true
+    companion object {
+        fun isSupprotAAC(): Boolean {
+            val mediaCount = MediaCodecList.getCodecCount()
+            for (i in 0 until mediaCount) {
+                val codecInfoAt = MediaCodecList.getCodecInfoAt(i)
+                if (!codecInfoAt.isEncoder)
+                    continue
+                val supportedTypes = codecInfoAt.supportedTypes
+                for (j in 0 until supportedTypes.size) {
+                    if (supportedTypes[j].equals(MediaFormat.MIMETYPE_AUDIO_AAC, true)) {
+                        return true
+                    }
                 }
             }
+            return false
         }
-        return false
     }
 
 

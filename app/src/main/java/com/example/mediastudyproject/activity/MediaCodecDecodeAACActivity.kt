@@ -105,11 +105,11 @@ class MediaCodecDecodeAACActivity : AppCompatActivity() {
         audioDecoder.setCallback(object : MediaCodec.Callback() {
             override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
                 //解码后数据
-                val outBuffer = codec.getOutputBuffer(index)
-                val byteArray = ByteArray(info.size)
-                outBuffer.get(byteArray)
-                audioList.offer(byteArray)
-                codec.releaseOutputBuffer(index, false)
+//                val outBuffer = codec.getOutputBuffer(index)
+//                val byteArray = ByteArray(info.size)
+//                outBuffer.get(byteArray)
+//                audioList.offer(byteArray)
+//                codec.releaseOutputBuffer(index, false)
             }
 
             override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {

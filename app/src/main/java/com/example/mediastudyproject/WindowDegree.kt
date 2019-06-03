@@ -5,6 +5,7 @@ import android.view.Surface
 
 object WindowDegree {
     fun getDegree(context: Activity): Int {
+        //这个方向只针对后置摄像头，Camera类有提供方向设置角度的范例，兼顾前置和后置
         var rotation = context.windowManager.defaultDisplay.rotation
         return when(rotation) {
             Surface.ROTATION_0 ->

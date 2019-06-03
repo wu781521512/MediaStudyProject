@@ -14,7 +14,7 @@ class CircleTexureView @JvmOverloads constructor(context: Context,
     : TextureView(context, attributes, defStyle) {
 
 
-    val mPath = Path()
+    private val mPath = Path()
     init {
         background = ColorDrawable(resources.getColor(R.color.transparent))
 
