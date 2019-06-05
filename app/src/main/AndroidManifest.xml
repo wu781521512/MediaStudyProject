@@ -22,25 +22,31 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".activity.VideoListActivity">
+        <activity android:name=".activity.MediaRecorderActivity">
 
         </activity>
-        <activity android:name=".activity.Camera1PreviewActivity">
+        <activity android:name=".activity.MP4DecodeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.H264DecodeActivity"></activity>
+        <activity android:name=".activity.VideoListActivity" />
+        <activity android:name=".activity.Camera1PreviewActivity">
+
+        </activity>
+        <activity android:name=".activity.H264DecodeActivity" />
         <activity android:name=".activity.H264EncodeActivity" />
         <activity android:name=".activity.MediaCodecDecodeAACActivity" />
         <activity android:name=".activity.MediaCodecForAACActivity" />
         <activity android:name=".activity.AudioAndVideoProcessActivity" />
         <activity android:name=".activity.Camera2Activity" />
         <activity android:name=".activity.CameraActivity" />
-        <activity android:name=".activity.AudioActivity" />
-        <activity android:name=".activity.MainActivity"></activity>
+        <activity android:name=".activity.AudioActivity">
+
+        </activity>
+        <activity android:name=".activity.MainActivity" />
 
         <service android:name=".PlayerService" />
     </application>

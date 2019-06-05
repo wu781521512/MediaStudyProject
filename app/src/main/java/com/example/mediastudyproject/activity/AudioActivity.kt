@@ -60,9 +60,8 @@ class AudioActivity : AppCompatActivity() {
 //        audioManager.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL,0,
 //            AudioManager.STREAM_VOICE_CALL)
 
-        recordFile = File(cacheDir, "record.wav")
-        if (recordFile!!.exists())
-            recordFile!!.delete()
+        recordFile = File(cacheDir, "decodeMp4.pcm")
+
         Log.i("file", recordFile!!.absolutePath)
         Log.i("file", "${recordFile!!.exists()}    ${recordFile!!.length()}")
         audioRecord = AudioRecord(

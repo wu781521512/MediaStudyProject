@@ -160,7 +160,6 @@ class MediaCodecForAACActivity : AppCompatActivity() {
                 )
             //配置比特率
             encodeFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000)
-            //这是什么？
             encodeFormat.setInteger(
                 MediaFormat.KEY_AAC_PROFILE,
                 MediaCodecInfo.CodecProfileLevel.AACObjectLC

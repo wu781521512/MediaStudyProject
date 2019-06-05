@@ -92,10 +92,10 @@ class Camera1PreviewActivity : AppCompatActivity() {
         audioMediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000)
 
 
-//        audioMediaFormat.setInteger(
-//            MediaFormat.KEY_AAC_PROFILE,
-//            MediaCodecInfo.CodecProfileLevel.AACObjectLC
-//        )
+        audioMediaFormat.setInteger(
+            MediaFormat.KEY_AAC_PROFILE,
+            MediaCodecInfo.CodecProfileLevel.AACObjectLC
+        )
         //配置最大输入大小
         audioMediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, minSize * 2)
 
@@ -184,6 +184,23 @@ class Camera1PreviewActivity : AppCompatActivity() {
         }
     }
 
+
+    /**
+     * 添加ADTS头，如果要与视频流合并就不用添加，单独AAC文件就需要添加，否则无法正常播放
+     */
+    fun addADTStoPacket(sampleRateType: Int, packet: ByteArray, packetLen: Int) {
+        val profile = 2 // AAC LC
+        val chanCfg = 1 // CPE
+
+        packet[0] = 0xFF.toByte()
+        packet[1] = 0xF9.toByte()
+        packet[2] = ((profile - 1 shl 6) + (sampleRateType shl 2) + (chanCfg shr 2)).toByte()
+        packet[3] = ((chanCfg and 3 shl 6) + (packetLen shr 11)).toByte()
+        packet[4] = (packetLen and 0x7FF shr 3).toByte()
+        packet[5] = ((packetLen and 7 shl 5) + 0x1F).toByte()
+        packet[6] = 0xFC.toByte()
+    }
+
     /***
      * @param 音频数据个数
      */
@@ -233,6 +250,13 @@ class Camera1PreviewActivity : AppCompatActivity() {
                 if (bufferInfo.size != 0) {
                     Log.i("camera1","音频时间戳  ${bufferInfo.presentationTimeUs /1000}")
 //                    bufferInfo.presentationTimeUs = getPTSUs()
+
+                    val byteArray = ByteArray(bufferInfo.size+7)
+                    outputBuffer.get(byteArray,7,bufferInfo.size)
+                    addADTStoPacket(0x04,byteArray,bufferInfo.size+7)
+                    outputBuffer.clear()
+                    val headBuffer = ByteBuffer.allocate(byteArray.size)
+                    headBuffer.put(byteArray)
                     muxerThread?.addAudioData(outputBuffer, bufferInfo)
 //                    prevOutputPTSUs = bufferInfo.presentationTimeUs
 
